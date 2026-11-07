@@ -62,6 +62,23 @@ const monitorText=textSprite('BUILD  /  CREATE  /  SHIP');monitorText.position.s
 box(cabin,1.1,.16,.8,gold,0,1.55,-.15);box(cabin,.7,.05,.35,dark,0,1.66,-.15);
 box(cabin,.95,1.05,.18,gold,0,1.05,.6);box(cabin,1.2,.15,1,dark,0,.5,.85);
 for(let x of [-3.6,3.6]){box(cabin,1.3,2.1,.15,wall,x,1.6,-3.65);for(let i=0;i<3;i++)box(cabin,.85,.035,.08,cyan,x,1.1+i*.5,-3.54)}
+
+function makePerson({shirt=0x1c5471,trousers=0x111b2a,skin=0xc98f70,hair=0x171b27}={}){
+ const root=new THREE.Group(),bodyMat=new THREE.MeshStandardMaterial({color:shirt,roughness:.72}),pantsMat=new THREE.MeshStandardMaterial({color:trousers,roughness:.8}),skinMat=new THREE.MeshStandardMaterial({color:skin,roughness:.85}),hairMat=new THREE.MeshStandardMaterial({color:hair,roughness:.9}),shoeMat=new THREE.MeshStandardMaterial({color:0x090e18,roughness:.65});
+ box(root,.62,.82,.34,bodyMat,0,1.28,0);
+ cylinder(root,.12,.12,.18,skinMat,0,1.78,0,10);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.235,16,12),skinMat);head.position.set(0,2.02,-.015);head.castShadow=true;root.add(head);
+ const cap=new THREE.Mesh(new THREE.SphereGeometry(.24,16,8,0,Math.PI*2,0,Math.PI*.58),hairMat);cap.position.set(0,2.09,.015);root.add(cap);
+ const armL=new THREE.Group(),armR=new THREE.Group();armL.position.set(-.39,1.58,0);armR.position.set(.39,1.58,0);root.add(armL,armR);
+ for(const a of [armL,armR]){cylinder(a,.105,.085,.58,bodyMat,0,-.28,0,10);const hand=new THREE.Mesh(new THREE.SphereGeometry(.105,10,8),skinMat);hand.position.set(0,-.61,-.01);a.add(hand)}
+ const legL=new THREE.Group(),legR=new THREE.Group();legL.position.set(-.17,.88,0);legR.position.set(.17,.88,0);root.add(legL,legR);
+ for(const l of [legL,legR]){cylinder(l,.14,.115,.72,pantsMat,0,-.35,0,10);box(l,.25,.14,.38,shoeMat,0,-.72,-.09)}
+ return {root,armL,armR,legL,legR};
+}
+const visitor=makePerson({shirt:0x1c5471,trousers:0x111b2a});visitor.root.position.set(0,0,5.5);world.add(visitor.root);
+const receptionist=makePerson({shirt:0x8b73bd,trousers:0x25213b,skin:0xd8a083,hair:0x25202c});receptionist.root.position.set(0,0,-2.35);receptionist.root.rotation.y=Math.PI;reception.add(receptionist.root);
+const welcomeSign=textSprite('HELLO  •  WELCOME');welcomeSign.position.set(0,3.55,-3.02);welcomeSign.scale.set(2.7,.55,1);reception.add(welcomeSign);
+
 // Floating particles
 const particles=new THREE.Group();world.add(particles);for(let i=0;i<150;i++){const p=new THREE.Mesh(new THREE.SphereGeometry(.025+Math.random()*.025,6,6),new THREE.MeshBasicMaterial({color:i%4===0?0xa78bfa:0x62e7f5,transparent:true,opacity:.65}));p.position.set((Math.random()-.5)*22,Math.random()*7-1,(Math.random()-.5)*34-7);particles.add(p)}
 const stages=[
@@ -69,13 +86,40 @@ const stages=[
 {eyebrow:'THE FIRST HELLO',step:'02 / 03 · RECEPTION',heading:'Welcome to<br><em>my space.</em>',desc:"I build end-to-end web applications, bringing together thoughtful React experiences and reliable Java backends. Here's a quick introduction before we head to my cabin.",button:'WALK TO MY CABIN ↗',caption:'RECEPTION',cam:[0,3.7,-4.3],look:[0,1.7,-8],info:true,label:'ABOUT ME',title:'Full Stack Developer',text:'Focused on building responsive user experiences and dependable backend services with modern web technologies.',chips:['React','Java','Spring Boot','REST APIs']},
 {eyebrow:'MAKE YOURSELF AT HOME',step:'03 / 03 · MY CABIN',heading:'Let’s build<br><em>what’s next.</em>',desc:'Explore the technologies I work with and the teams I’ve contributed to. My work spans frontend experiences, backend services and enterprise applications.',button:'RESTART THE TOUR ↺',caption:'AFROZ’S CABIN',cam:[0,4.1,-15.1],look:[0,1.7,-19],info:true,label:'CAREER SNAPSHOT',title:'Wipro · Full Stack Developer',text:'Previously contributed at Verizon and Capgemini. Building across the stack with React, Java and Spring Boot.',chips:['Wipro','Verizon','Capgemini','Hyderabad']}
 ];
-let stage=0,camFrom=camera.position.clone(),lookFrom=new THREE.Vector3(0,1,0),camTo=new THREE.Vector3(...stages[0].cam),lookTo=new THREE.Vector3(...stages[0].look),transitionStart=performance.now(),drag=false,lastX=0,lastY=0,dragYaw=0,dragPitch=0;
+let stage=0,camFrom=camera.position.clone(),lookFrom=new THREE.Vector3(0,1,0),camTo=new THREE.Vector3(...stages[0].cam),lookTo=new THREE.Vector3(...stages[0].look),transitionStart=performance.now(),drag=false,lastX=0,lastY=0,dragYaw=0,dragPitch=0,storyStart=performance.now(),storyFinished=false,manualTour=false;
 const panel=document.querySelector('#panel'),info=document.querySelector('#info'),dots=[...document.querySelectorAll('.dot')];
 function moveTo(n){stage=(n+3)%3;const s=stages[stage];camFrom.copy(camera.position);lookFrom.copy(lookTo);camTo.set(...s.cam);lookTo.set(...s.look);transitionStart=performance.now();document.querySelector('#eyebrow').textContent=s.eyebrow;document.querySelector('#step').textContent=s.step;document.querySelector('#heading').innerHTML=s.heading;document.querySelector('#description').textContent=s.desc;document.querySelector('#next').textContent=s.button;document.querySelector('#caption').textContent=s.caption;dots.forEach((d,i)=>d.classList.toggle('active',i===stage));info.classList.toggle('show',s.info);if(s.info){document.querySelector('#infoLabel').textContent=s.label;document.querySelector('#infoTitle').textContent=s.title;document.querySelector('#infoText').textContent=s.text;document.querySelector('#chips').innerHTML=s.chips.map(v=>'<span class="chip">'+v+'</span>').join('')}panel.style.transform='translateY(-42%) scale(.985)';panel.style.opacity='.35';setTimeout(()=>{panel.style.transform='translateY(-42%) scale(1)';panel.style.opacity='1'},180);dragYaw=0;dragPitch=0}
-document.querySelector('#next').addEventListener('click',()=>moveTo(stage===2?0:stage+1));document.querySelector('#skip').addEventListener('click',()=>moveTo(2));
+document.querySelector('#next').addEventListener('click',()=>moveTo(stage===2?0:stage+1));document.querySelector('#skip').addEventListener('click',()=>{manualTour=true;storyFinished=true;visitor.root.position.set(0,0,-18.1);receptionist.armR.rotation.z=-.75;moveTo(2)});
 canvas.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);canvas.addEventListener('pointermove',e=>{if(!drag)return;dragYaw+=(e.clientX-lastX)*.003;dragPitch+=(e.clientY-lastY)*.0015;dragPitch=Math.max(-.16,Math.min(.16,dragPitch));lastX=e.clientX;lastY=e.clientY});
 canvas.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>8)moveTo(stage===0?1:stage===1?2:0)},{passive:true});
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}addEventListener('resize',resize);resize();
-const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime(),p=Math.min(1,(performance.now()-transitionStart)/1450),ease=1-Math.pow(1-p,3);camera.position.lerpVectors(camFrom,camTo,ease);const target=lookFrom.clone().lerp(lookTo,ease);camera.position.x+=Math.sin(t*.22)*.035+dragYaw;camera.position.y+=Math.sin(t*.38)*.035+dragPitch;camera.lookAt(target);particles.rotation.y=t*.012;cyan.emissiveIntensity=1.05+Math.sin(t*1.8)*.25;doorL.rotation.y=Math.sin(t*.65)*.04;doorR.rotation.y=-Math.sin(t*.65)*.04;renderer.render(scene,camera)}moveTo(0);animate();
+const clock=new THREE.Clock();
+function animate(){
+ requestAnimationFrame(animate);
+ const t=clock.getElapsedTime(),elapsed=(performance.now()-storyStart)/1000,p=Math.min(1,(performance.now()-transitionStart)/1450),ease=1-Math.pow(1-p,3);
+ if(!manualTour&&!storyFinished){
+  const gateOpen=THREE.MathUtils.smoothstep(elapsed,1.8,3.5);
+  doorL.rotation.y=-gateOpen*1.18;doorR.rotation.y=gateOpen*1.18;
+  let z=5.5,walking=false;
+  if(elapsed>=3.5&&elapsed<7.4){z=THREE.MathUtils.lerp(5.5,-3.6,(elapsed-3.5)/3.9);walking=true}
+  else if(elapsed>=7.4&&elapsed<9.2)z=-3.6;
+  else if(elapsed>=9.2&&elapsed<13.3){z=THREE.MathUtils.lerp(-3.6,-9.2,(elapsed-9.2)/4.1);walking=true}
+  else if(elapsed>=13.3&&elapsed<14.3)z=-9.2;
+  else if(elapsed>=14.3){const q=THREE.MathUtils.clamp((elapsed-14.3)/6.3,0,1);z=THREE.MathUtils.lerp(-9.2,-18.1,q);walking=q<1}
+  visitor.root.position.z=z;
+  const gait=walking?Math.sin(t*8)*.48:0;visitor.legL.rotation.x=gait;visitor.legR.rotation.x=-gait;visitor.armL.rotation.x=-gait*.55;visitor.armR.rotation.x=gait*.55;
+  receptionist.armR.rotation.z=elapsed>7.4&&elapsed<9.3?-.82*Math.sin((elapsed-7.4)*Math.PI/1.9):elapsed>=13.3&&elapsed<15.3?-.95:0;
+  receptionist.armL.rotation.z=elapsed>7.4&&elapsed<9.3?.18:0;
+  const followZ=z+7.7;camera.position.x=THREE.MathUtils.lerp(camera.position.x,0,.035);camera.position.y=THREE.MathUtils.lerp(camera.position.y,4.05,.035);camera.position.z=THREE.MathUtils.lerp(camera.position.z,followZ,.035);camera.lookAt(0,1.65,z-3.3);
+  if(elapsed>20.8){storyFinished=true;moveTo(2)}
+ }else{
+  camera.position.lerpVectors(camFrom,camTo,ease);
+  const target=lookFrom.clone().lerp(lookTo,ease);
+  camera.position.x+=Math.sin(t*.22)*.025+dragYaw;camera.position.y+=Math.sin(t*.38)*.025+dragPitch;camera.lookAt(target);
+ }
+ particles.rotation.y=t*.012;cyan.emissiveIntensity=1.05+Math.sin(t*1.8)*.25;
+ renderer.render(scene,camera);
+}
+moveTo(0);panel.style.opacity='0';setTimeout(()=>{if(!manualTour&&stage===0)panel.style.opacity='1'},2100);animate();
 </script>
 </body></html>
