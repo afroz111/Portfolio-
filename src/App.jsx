@@ -1,49 +1,54 @@
-import React, { Suspense, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUpRight, Volume2, VolumeX, RotateCcw, ChevronDown } from 'lucide-react';
-import OfficeExperience from './scene/OfficeExperience.jsx';
+import React, { Suspense, useEffect, useRef } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { Environment, Float, MeshTransmissionMaterial, Sparkles, Stars } from '@react-three/drei';
+import { motion } from 'framer-motion';
+import { ArrowUpRight, ArrowDown, Github, Linkedin, Mail, MoveUpRight } from 'lucide-react';
+import ExperienceScene from './scene/OfficeExperience.jsx';
 
-const skills = ['React','JavaScript','TypeScript','Java','Spring Boot','Microservices','REST APIs','Redux','SQL','Git'];
-export default function App() {
-  const [introDone,setIntroDone] = useState(false);
-  const [muted,setMuted] = useState(true);
-  const [section,setSection] = useState('about');
-  useEffect(()=>{ const timer=setTimeout(()=>setIntroDone(true),21800); return ()=>clearTimeout(timer); },[]);
-  const skip=()=>setIntroDone(true);
-  return <main className="portfolio-shell">
-    <div className="scene"><Suspense fallback={<div className="loading">BUILDING THE EXPERIENCE<span> · · ·</span></div>}><OfficeExperience/></Suspense></div>
-    <header className="nav">
-      <a className="logo" href="#home">AFROZ<span>.</span></a>
-      <div className="nav-right"><span className="availability"><i/> HYDERABAD, INDIA</span><a href="mailto:afrozmohammed111@gmail.com">LET'S TALK <ArrowUpRight size={13}/></a></div>
-    </header>
-    <div className="intro-controls">
-      <div className="story-progress"><span className={!introDone?'active':''}/><span className={introDone?'active':''}/></div>
-      <span className="story-label">{introDone?'THE DEVELOPER':'AN OFFICE STORY · 01—03'}</span>
-      {!introDone && <button onClick={skip} className="skip">SKIP INTRO <ChevronDown size={13}/></button>}
-    </div>
-    <AnimatePresence>
-      {introDone && <motion.section id="home" className="hero-copy" initial={{opacity:0,y:28}} animate={{opacity:1,y:0}} transition={{duration:.9,ease:[.2,.7,.2,1]}}>
-        <div className="eyebrow"><span/> FULL STACK DEVELOPER · 5 YEARS EXPERIENCE</div>
-        <h1>Engineering<br/><em>what’s next.</em></h1>
-        <p className="lead">Hi, I’m <strong>Afroz Mohammed</strong> — I build thoughtful digital experiences and dependable applications, from React interfaces to Java-powered services.</p>
-        <div className="hero-actions"><a className="button primary" href="#experience">EXPLORE MY WORK <ArrowUpRight size={15}/></a><a className="button secondary" href="mailto:afrozmohammed111@gmail.com">GET IN TOUCH</a></div>
-        <div className="hero-meta"><span>01 <i/> ABOUT</span><span>02 <i/> EXPERIENCE</span><span>03 <i/> TOOLKIT</span></div>
-      </motion.section>}
-    </AnimatePresence>
-    {introDone && <motion.aside className="scene-note" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} transition={{delay:.4}}>YOU MADE IT IN.<br/><b>TAKE A LOOK AROUND.</b></motion.aside>}
-    <div className="scroll-cue">{introDone?'SCROLL TO EXPLORE':'THE STORY IS PLAYING'} <span/></div>
-    {introDone && <div className="content">
-      <section id="experience" className="content-section">
-        <div className="section-kicker">02 / EXPERIENCE</div><h2>Building across<br/><em>the stack.</em></h2>
-        <div className="timeline">
-          <article><div className="date">CURRENT</div><div><h3>Wipro <small>Full Stack Developer</small></h3><p>Developing and enhancing enterprise applications, contributing across modern frontend experiences and backend services.</p></div></article>
-          <article><div className="date">PREVIOUS</div><div><h3>Verizon <small>Full Stack Developer</small></h3><p>Contributed to trade-in platform enhancements, working on customer-facing flows and service integrations.</p></div></article>
-          <article><div className="date">EARLIER</div><div><h3>Capgemini <small>Software Engineer</small></h3><p>Started my professional journey building a foundation in enterprise software development.</p></div></article>
-        </div>
-      </section>
-      <section className="content-section toolkit"><div className="section-kicker">03 / TOOLKIT</div><h2>Tools of<br/><em>the trade.</em></h2><div className="skill-list">{skills.map(s=><span key={s}>{s}</span>)}</div></section>
-      <section className="content-section contact"><div className="section-kicker">04 / NEXT CHAPTER</div><h2>Have a good<br/><em>problem to solve?</em></h2><a className="button primary" href="mailto:afrozmohammed111@gmail.com">LET'S BUILD TOGETHER <ArrowUpRight size={15}/></a><div className="socials"><a href="https://github.com/afroz111" target="_blank" rel="noreferrer">GITHUB ↗</a><a href="https://www.linkedin.com/in/mohammed-afroz-a48150243/" target="_blank" rel="noreferrer">LINKEDIN ↗</a><a href="mailto:afrozmohammed111@gmail.com">EMAIL ↗</a></div></section>
-      <footer className="footer"><span>AFROZ<span className="cyan">.</span></span><span>DESIGNED & BUILT WITH INTENTION · 2026</span></footer>
-    </div>}
-  </main>;
+const skills = ['React.js','JavaScript','TypeScript','Java','Spring Boot','Microservices','REST APIs','Redux','HTML & CSS','SQL','Git','Three.js'];
+const jobs = [
+  { company:'Wipro', role:'Full Stack Developer', period:'CURRENT', copy:'Building and enhancing enterprise applications across modern frontend experiences and backend services.' },
+  { company:'Verizon', role:'Full Stack Developer', period:'PREVIOUS', copy:'Contributed to the trade-in platform, improving customer journeys and service integrations.' },
+  { company:'Capgemini', role:'Software Engineer', period:'EARLIER', copy:'Built a strong foundation in enterprise software engineering and collaborative product delivery.' }
+];
+function TopScene(){ return <div className="visual-world"><Canvas dpr={[1,1.5]} camera={{position:[0,0,8],fov:42}} gl={{antialias:true,alpha:true}}><color attach="background" args={['#070910']}/><ambientLight intensity={1.3}/><directionalLight position={[5,6,5]} intensity={3}/><pointLight position={[-4,2,2]} intensity={24} color="#56d9ff"/><pointLight position={[4,-3,-2]} intensity={18} color="#9d7bff"/><Suspense fallback={null}><ExperienceScene/><Environment preset="city"/><Sparkles count={80} scale={9} size={1.8} speed={.25} color="#91eaff"/><Stars radius={45} depth={30} count={700} factor={2} fade speed={.35}/></Suspense></Canvas></div> }
+export default function App(){
+ const root=useRef(null);
+ useEffect(()=>{
+   let ctx;
+   import('gsap').then(async ({gsap})=>{
+     const {ScrollTrigger}=await import('gsap/ScrollTrigger'); gsap.registerPlugin(ScrollTrigger);
+     ctx=gsap.context(()=>{
+       gsap.from('.hero-kicker',{y:18,opacity:0,duration:.8,delay:.2,ease:'power3.out'});
+       gsap.from('.hero-title .line',{y:110,opacity:0,duration:1.15,stagger:.13,delay:.25,ease:'power4.out'});
+       gsap.from('.hero-description,.hero-links',{y:22,opacity:0,duration:.8,stagger:.12,delay:.75,ease:'power3.out'});
+       gsap.utils.toArray('.reveal').forEach(el=>gsap.from(el,{y:50,opacity:0,duration:1,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 84%'}}));
+       gsap.to('.visual-world',{yPercent:12,scale:.92,ease:'none',scrollTrigger:{trigger:'.about-section',start:'top bottom',end:'bottom top',scrub:1}});
+     },root);
+   });
+   return ()=>ctx?.revert();
+ },[]);
+ return <main ref={root} className="site">
+   <TopScene/>
+   <header className="topbar"><a className="wordmark" href="#top">AFROZ<span>®</span></a><nav><a href="#about">ABOUT</a><a href="#experience">EXPERIENCE</a><a href="#stack">STACK</a><a className="nav-contact" href="mailto:afrozmohammed111@gmail.com">LET’S TALK <MoveUpRight size={13}/></a></nav></header>
+   <section id="top" className="hero">
+     <div className="hero-content">
+       <div className="hero-kicker"><i/> AVAILABLE FOR NEW OPPORTUNITIES <span>— HYDERABAD, IN</span></div>
+       <h1 className="hero-title"><span className="line">Building</span><span className="line outline">digital</span><span className="line">experiences<span className="dot">.</span></span></h1>
+       <p className="hero-description">I’m <b>Afroz Mohammed</b>, a Full Stack Developer crafting responsive interfaces and reliable backend systems with React, Java and Spring Boot.</p>
+       <div className="hero-links"><a className="pill-link" href="#experience">EXPLORE MY WORK <ArrowDown size={15}/></a><a className="text-link" href="mailto:afrozmohammed111@gmail.com">GET IN TOUCH <ArrowUpRight size={15}/></a></div>
+     </div>
+     <div className="hero-index"><span>01 / 04</span><span>SCROLL TO EXPLORE ↓</span></div>
+     <div className="hero-caption">CREATIVE DEVELOPMENT<br/>ENGINEERED WITH PURPOSE</div>
+   </section>
+   <section id="about" className="about-section section-pad">
+     <div className="section-label reveal">01 — ABOUT ME</div><div className="about-grid"><h2 className="reveal">Code with<br/><em>clarity.</em><br/>Build with<br/><em>purpose.</em></h2><div className="about-copy reveal"><p>I’m a software developer with around five years of experience building web applications. I enjoy connecting thoughtful user experiences with scalable, maintainable services.</p><p>From shaping React interfaces to developing Java and Spring Boot services, I focus on solving real problems and making products feel effortless to use.</p><div className="stat-row"><div><b>05<span>+</span></b><small>YEARS IN TECH</small></div><div><b>03</b><small>COMPANIES</small></div><div><b>01</b><small>FULL STACK MINDSET</small></div></div></div></div>
+   </section>
+   <section id="experience" className="experience-section section-pad">
+     <div className="section-label reveal">02 — EXPERIENCE</div><div className="section-heading reveal"><h2>Where I’ve<br/><em>made impact.</em></h2><span>THE JOURNEY SO FAR ↘</span></div>
+     <div className="job-list">{jobs.map((job,i)=><article className="job-card reveal" key={job.company}><span className="job-number">0{i+1}</span><div><h3>{job.company}</h3><p>{job.copy}</p></div><div className="job-meta"><b>{job.role}</b><span>{job.period}</span></div><ArrowUpRight className="job-arrow"/></article>)}</div>
+   </section>
+   <section id="stack" className="stack-section section-pad"><div className="section-label reveal">03 — TOOLKIT</div><div className="section-heading reveal"><h2>My everyday<br/><em>building blocks.</em></h2><span>TOOLS I WORK WITH ↘</span></div><div className="skill-grid reveal">{skills.map((skill,i)=><div className="skill-chip" key={skill}><span>0{i+1}</span>{skill}<ArrowUpRight size={14}/></div>)}</div></section>
+   <section className="contact-section section-pad"><div className="section-label reveal">04 — WHAT’S NEXT?</div><h2 className="reveal">Let’s make<br/><em>something matter.</em></h2><a className="contact-cta reveal" href="mailto:afrozmohammed111@gmail.com">START A CONVERSATION <ArrowUpRight/></a><div className="social-row"><span>HYDERABAD, INDIA</span><div><a href="https://github.com/afroz111" target="_blank" rel="noreferrer"><Github size={16}/> GITHUB</a><a href="https://www.linkedin.com/in/mohammed-afroz-a48150243/" target="_blank" rel="noreferrer"><Linkedin size={16}/> LINKEDIN</a><a href="mailto:afrozmohammed111@gmail.com"><Mail size={16}/> EMAIL</a></div><span>© AFROZ 2026</span></div></section>
+ </main>
 }
